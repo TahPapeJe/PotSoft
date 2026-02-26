@@ -1,3 +1,1 @@
-# frontend
-
-A new Flutter project.
+# PotSoft - Frontend
