@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 /// Full-screen frosted overlay that locks access to the contractor dashboard.
-/// Rendered by [ContractorScreen] when [_isAuthenticated] is false.
+/// Rendered by [ContractorScreen] when the user is not authenticated.
 class SecureGateWidget extends StatelessWidget {
   final TextEditingController passwordController;
   final String? errorMessage;
