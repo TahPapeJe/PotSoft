@@ -398,7 +398,8 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
   Widget _buildAnalyticsPane(List<PotholeReport> reports) {
     final jMap = _jurisdictionBreakdown(reports);
     final stats = _computeStats(reports);
-    final total = (stats['total'] ?? 0).clamp(1, 999999);
+    final int total =
+        ((stats['total'] ?? 0) as num).clamp(1, 999999).toInt();
     final finished = stats['finished'] ?? 0;
     final inProgress = stats['inProgress'] ?? 0;
     final red = stats['Red'] ?? 0;
