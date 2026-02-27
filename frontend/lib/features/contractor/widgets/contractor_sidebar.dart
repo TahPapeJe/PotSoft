@@ -861,7 +861,7 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
         ? (toCount / fromCount * 100).toStringAsFixed(0)
         : '-';
     final fraction = fromCount > 0
-        ? (toCount / fromCount).clamp(0.0, 1.0)
+        ? (toCount / fromCount).clamp(0.0, 1.0).toDouble()
         : 0.0;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
