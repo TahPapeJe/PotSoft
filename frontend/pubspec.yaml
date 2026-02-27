@@ -4,11 +4,16 @@ publish_to: 'none'
 version: 0.1.0+1
 
 environment:
-  sdk: ^3.11.0
+  sdk: ^3.10.0
 
 dependencies:
   flutter:
     sdk: flutter
+  provider: ^6.1.2
+  image_picker: ^1.1.2
+  http: ^1.2.2
+  http_parser: ^4.0.2
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -17,3 +22,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - .env

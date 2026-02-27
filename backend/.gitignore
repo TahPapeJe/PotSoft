@@ -1,1 +1,4 @@
-/node_modules
+.env
+
+routes/__pycache__/
+schemas/__pycache__/
