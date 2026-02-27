@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -23,20 +24,85 @@ class ReportPotholeDialog extends StatefulWidget {
   State<ReportPotholeDialog> createState() => _ReportPotholeDialogState();
 }
 
+// Default fallback: Kuala Lumpur city centre
+const double _kKLLat = 3.1390;
+const double _kKLLng = 101.6869;
+
 class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
   final ImagePicker _picker = ImagePicker();
   Uint8List? _imageBytes;
   String? _base64Image;
   bool _isSubmitting = false;
+  bool _isLoadingLocation = true;
 
   late double _selectedLat;
   late double _selectedLong;
+  GoogleMapController? _dialogMapController;
 
   @override
   void initState() {
     super.initState();
     _selectedLat = widget.initialLat;
     _selectedLong = widget.initialLong;
+    _resolveLocation();
+  }
+
+  /// Try the device GPS first; fall back to the passed-in coords or KL.
+  Future<void> _resolveLocation() async {
+    try {
+      final serviceOk = await Geolocator.isLocationServiceEnabled();
+      if (!serviceOk) {
+        _fallback();
+        return;
+      }
+
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+        if (perm == LocationPermission.denied) {
+          _fallback();
+          return;
+        }
+      }
+      if (perm == LocationPermission.deniedForever) {
+        _fallback();
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _selectedLat = pos.latitude;
+          _selectedLong = pos.longitude;
+          _isLoadingLocation = false;
+        });
+        _dialogMapController?.animateCamera(
+          CameraUpdate.newLatLng(LatLng(_selectedLat, _selectedLong)),
+        );
+      }
+    } catch (_) {
+      _fallback();
+    }
+  }
+
+  void _fallback() {
+    if (!mounted) return;
+    // If the caller already had a real position use it; otherwise KL.
+    final useFallbackKL =
+        (_selectedLat == kMalaysiaCenter.lat &&
+            _selectedLong == kMalaysiaCenter.lng) ||
+        (_selectedLat == 0 && _selectedLong == 0);
+    setState(() {
+      if (useFallbackKL) {
+        _selectedLat = _kKLLat;
+        _selectedLong = _kKLLng;
+      }
+      _isLoadingLocation = false;
+    });
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -235,20 +301,28 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                           borderRadius: BorderRadius.circular(12),
                           child: Stack(
                             children: [
-                              GoogleMap(
-                                initialCameraPosition: CameraPosition(
-                                  target: LatLng(_selectedLat, _selectedLong),
-                                  zoom: 16,
+                              if (_isLoadingLocation)
+                                const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.accent,
+                                  ),
+                                )
+                              else
+                                GoogleMap(
+                                  initialCameraPosition: CameraPosition(
+                                    target: LatLng(_selectedLat, _selectedLong),
+                                    zoom: 16,
+                                  ),
+                                  style: kDarkMapStyle,
+                                  onMapCreated: (c) => _dialogMapController = c,
+                                  onCameraMove: (position) {
+                                    _selectedLat = position.target.latitude;
+                                    _selectedLong = position.target.longitude;
+                                  },
+                                  myLocationEnabled: true,
+                                  myLocationButtonEnabled: true,
+                                  zoomControlsEnabled: false,
                                 ),
-                                style: kDarkMapStyle,
-                                onCameraMove: (position) {
-                                  _selectedLat = position.target.latitude;
-                                  _selectedLong = position.target.longitude;
-                                },
-                                myLocationEnabled: true,
-                                myLocationButtonEnabled: true,
-                                zoomControlsEnabled: false,
-                              ),
                               const Center(
                                 child: Padding(
                                   padding: EdgeInsets.only(bottom: 35.0),
