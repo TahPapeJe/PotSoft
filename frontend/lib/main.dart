@@ -20,6 +20,7 @@ class PotSoftApp extends StatelessWidget {
       ],
       child: MaterialApp.router(
         title: 'PotSoft',
+        debugShowCheckedModeBanner: false,
         theme: appTheme,
         routerConfig: appRouter,
       ),
