@@ -15,7 +15,9 @@ class PotSoftApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => ReportProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => ReportProvider()..loadReports()),
+      ],
       child: MaterialApp.router(
         title: 'PotSoft',
         theme: appTheme,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/pothole_report.dart';
 import '../../../core/providers/report_provider.dart';
+import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/app_toast.dart';
 import 'contractor_helpers.dart';
 
 /// A single report list card showing thumbnail, priority bar,
@@ -114,7 +116,7 @@ class PotholeListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pc = priorityColor(report.priorityColor);
+    final pc = AppColors.priorityColor(report.priorityColor);
     final isFinished = report.status == 'Finished';
     final isOverdue =
         report.status == 'Reported' &&
@@ -156,9 +158,7 @@ class PotholeListCard extends StatelessWidget {
                 // ── Main content ────────────────────────────────────────────
                 Expanded(
                   child: Padding(
-                    // Task 4: wider gap on left (thumbnail gap is now 12+12=24),
-                    // slight right/top/bottom padding.
-                    padding: const EdgeInsets.fromLTRB(0, 12, 12, 10),
+                    padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -171,10 +171,10 @@ class PotholeListCard extends StatelessWidget {
                               child: Text(
                                 '${report.sizeCategory} Pothole',
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
-                                  height: 1.2,
+                                  height: 1.35,
                                 ),
                               ),
                             ),
@@ -184,116 +184,180 @@ class PotholeListCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
 
-                        // Task 4: subtitle with CrossAxisAlignment.center
+                        // Subtitle: jurisdiction · timestamp
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Expanded(
+                            Icon(
+                              Icons.business_outlined,
+                              size: 13,
+                              color: Colors.grey[500],
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
                               child: Text(
-                                '${report.jurisdiction}  •  ${timeAgo(report.timestamp)}',
+                                report.jurisdiction,
                                 style: TextStyle(
                                   color: Colors.grey[400],
                                   fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                                 overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              child: Text(
+                                '|',
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.access_time,
+                              size: 13,
+                              color: Colors.grey[500],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              timeAgo(report.timestamp),
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 13,
                               ),
                             ),
                           ],
                         ),
 
                         if (isOverdue) ...[
-                          const SizedBox(height: 4),
-                          const Text(
-                            '⚠ OVERDUE',
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.redAccent.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 13,
+                                  color: Colors.redAccent,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'OVERDUE',
+                                  style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
 
-                        // Task 3: divider + buttons only when not Finished
+                        // Action buttons — real buttons
                         if (!isFinished) ...[
-                          const Divider(color: Colors.white12, height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              if (report.status != 'In Progress')
-                                TextButton.icon(
-                                  onPressed: () {
-                                    context.read<ReportProvider>().updateStatus(
-                                      report.id,
-                                      'In Progress',
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      buildSnackBar(
-                                        '${report.id} → In Progress 🚧',
-                                        Colors.orange,
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(
-                                    Icons.construction,
-                                    size: 15,
-                                    color: Colors.orange,
+                          const SizedBox(height: 10),
+                          const Divider(color: Colors.white10, height: 1),
+                          const SizedBox(height: 10),
+                          // "Finish Job" as prominent full-width button
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                context.read<ReportProvider>().updateStatus(
+                                  report.id,
+                                  'Finished',
+                                );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  AppToast.status(
+                                    '${report.id} → Finished ✓',
+                                    AppColors.statusFinished,
                                   ),
-                                  label: const Text(
-                                    'In Progress',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.orange,
-                                    ),
-                                  ),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.check_circle_outline,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                'FINISH JOB',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.8,
                                 ),
-                              const SizedBox(width: 4),
-                              TextButton.icon(
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.cyan,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (report.status != 'In Progress') ...[
+                            const SizedBox(height: 6),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
                                 onPressed: () {
                                   context.read<ReportProvider>().updateStatus(
                                     report.id,
-                                    'Finished',
+                                    'In Progress',
                                   );
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    buildSnackBar(
-                                      '${report.id} → Finished ✓',
-                                      Colors.cyan,
+                                    AppToast.status(
+                                      '${report.id} → In Progress 🚧',
+                                      AppColors.statusInProgress,
                                     ),
                                   );
                                 },
                                 icon: const Icon(
-                                  Icons.check_circle_outline,
-                                  size: 15,
-                                  color: Colors.cyan,
+                                  Icons.construction,
+                                  size: 16,
+                                  color: Colors.orange,
                                 ),
                                 label: const Text(
-                                  'Finish Job',
+                                  'In Progress',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.cyan,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.orange,
                                   ),
                                 ),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: Colors.orange.withValues(alpha: 0.4),
                                   ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ],
                       ],
                     ),

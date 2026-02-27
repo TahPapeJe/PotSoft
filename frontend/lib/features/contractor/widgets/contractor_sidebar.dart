@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/pothole_report.dart';
 import '../../../core/providers/report_provider.dart';
+import '../../../core/theme/design_tokens.dart';
 import 'contractor_helpers.dart';
 import 'pothole_list_card.dart';
 
@@ -224,7 +226,7 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
           child: TextField(
             controller: _searchController,
             onChanged: (v) => setState(() => _searchQuery = v),
@@ -271,96 +273,149 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+
+        // Priority segmented filter
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              ...chipFilters.map((entry) {
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white10),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: chipFilters.map((entry) {
                 final val = entry.$1;
                 final lbl = entry.$2;
                 final selected = _selectedPriority == val;
-                final color = priorityColor(val);
-                return ChoiceChip(
-                  label: Text(lbl),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _selectedPriority = val),
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: selected ? Colors.black : Colors.white70,
+                final color = AppColors.priorityColor(val);
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedPriority = val),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? color.withValues(alpha: 0.20)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: selected
+                            ? Border.all(color: color.withValues(alpha: 0.5))
+                            : Border.all(color: Colors.transparent),
+                      ),
+                      child: Center(
+                        child: Text(
+                          lbl,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: selected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: selected ? color : Colors.white54,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  selectedColor: color,
-                  backgroundColor: const Color(0xFF2A2A2A),
-                  side: BorderSide.none,
-                  showCheckmark: false,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  visualDensity: VisualDensity.compact,
                 );
-              }),
-              ChoiceChip(
-                avatar: Icon(
-                  _sortMode == 'priority'
+              }).toList(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Sort + Active Only row
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: _filterToggleButton(
+                  icon: _sortMode == 'priority'
                       ? Icons.priority_high
                       : Icons.access_time,
-                  size: 14,
-                  color: Colors.white60,
+                  label: _sortMode == 'priority' ? 'By Priority' : 'By Time',
+                  active: false,
+                  activeColor: Colors.white70,
+                  onTap: () => setState(
+                    () => _sortMode = _sortMode == 'priority'
+                        ? 'time'
+                        : 'priority',
+                  ),
                 ),
-                label: Text(
-                  _sortMode == 'priority' ? 'By Priority' : 'By Time',
-                ),
-                selected: false,
-                onSelected: (_) => setState(
-                  () =>
-                      _sortMode = _sortMode == 'priority' ? 'time' : 'priority',
-                ),
-                labelStyle: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.white70,
-                ),
-                backgroundColor: const Color(0xFF2A2A2A),
-                side: BorderSide.none,
-                showCheckmark: false,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                visualDensity: VisualDensity.compact,
               ),
-              ChoiceChip(
-                avatar: Icon(
-                  _showActiveOnly ? Icons.visibility : Icons.visibility_off,
-                  size: 14,
-                  color: _showActiveOnly ? Colors.tealAccent : Colors.white60,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _filterToggleButton(
+                  icon: _showActiveOnly
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                  label: 'Active Only',
+                  active: _showActiveOnly,
+                  activeColor: Colors.tealAccent,
+                  onTap: () {
+                    setState(() => _showActiveOnly = !_showActiveOnly);
+                    widget.onShowActiveOnlyChanged(_showActiveOnly);
+                  },
                 ),
-                label: const Text('Active Only'),
-                selected: _showActiveOnly,
-                onSelected: (v) {
-                  setState(() => _showActiveOnly = v);
-                  widget.onShowActiveOnlyChanged(v);
-                },
-                labelStyle: TextStyle(
-                  fontSize: 12,
-                  color: _showActiveOnly ? Colors.tealAccent : Colors.white70,
-                  fontWeight: _showActiveOnly
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                ),
-                selectedColor: Colors.tealAccent.withValues(alpha: 0.18),
-                backgroundColor: const Color(0xFF2A2A2A),
-                side: _showActiveOnly
-                    ? BorderSide(
-                        color: Colors.tealAccent.withValues(alpha: 0.5),
-                      )
-                    : BorderSide.none,
-                showCheckmark: false,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
       ],
+    );
+  }
+
+  Widget _filterToggleButton({
+    required IconData icon,
+    required String label,
+    required bool active,
+    required Color activeColor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: active
+          ? activeColor.withValues(alpha: 0.12)
+          : const Color(0xFF1A1A1A),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: active
+                  ? activeColor.withValues(alpha: 0.4)
+                  : Colors.white10,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: active ? activeColor : Colors.white54,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                  color: active ? activeColor : Colors.white54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -519,69 +574,109 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
         const Divider(color: Colors.white10),
         const SizedBox(height: 14),
 
-        // Two-column: Priority + Status
+        // Two-column: Priority Donut + Status bars in cards
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _SectionHeader('PRIORITY BREAKDOWN'),
-                  const SizedBox(height: 12),
-                  _buildBarRow(
-                    'Red (High)',
-                    stats['Red'] ?? 0,
-                    total,
-                    Colors.redAccent,
-                  ),
-                  _buildBarRow(
-                    'Yellow (Med)',
-                    stats['Yellow'] ?? 0,
-                    total,
-                    Colors.amberAccent,
-                  ),
-                  _buildBarRow(
-                    'Green (Low)',
-                    stats['Green'] ?? 0,
-                    total,
-                    Colors.greenAccent,
-                  ),
-                ],
+              child: _analyticsCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionHeader('PRIORITY BREAKDOWN'),
+                    const SizedBox(height: 14),
+                    Center(
+                      child: SizedBox(
+                        width: 120,
+                        height: 120,
+                        child: CustomPaint(
+                          painter: _DonutChartPainter(
+                            segments: [
+                              _DonutSegment(
+                                value: (stats['Red'] ?? 0).toDouble(),
+                                color: Colors.redAccent,
+                              ),
+                              _DonutSegment(
+                                value: (stats['Yellow'] ?? 0).toDouble(),
+                                color: Colors.amberAccent,
+                              ),
+                              _DonutSegment(
+                                value: (stats['Green'] ?? 0).toDouble(),
+                                color: Colors.greenAccent,
+                              ),
+                            ],
+                            total: total.toDouble(),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$total',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _donutLegendRow(
+                      Colors.redAccent,
+                      'Red (High)',
+                      stats['Red'] ?? 0,
+                      total,
+                    ),
+                    _donutLegendRow(
+                      Colors.amberAccent,
+                      'Yellow (Med)',
+                      stats['Yellow'] ?? 0,
+                      total,
+                    ),
+                    _donutLegendRow(
+                      Colors.greenAccent,
+                      'Green (Low)',
+                      stats['Green'] ?? 0,
+                      total,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _SectionHeader('STATUS BREAKDOWN'),
-                  const SizedBox(height: 12),
-                  _buildBarRow(
-                    'Reported',
-                    stats['reported'] ?? 0,
-                    total,
-                    Colors.white54,
-                  ),
-                  _buildBarRow(
-                    'Analyzed',
-                    stats['analyzed'] ?? 0,
-                    total,
-                    Colors.blueAccent,
-                  ),
-                  _buildBarRow(
-                    'In Progress',
-                    stats['inProgress'] ?? 0,
-                    total,
-                    Colors.orange,
-                  ),
-                  _buildBarRow(
-                    'Finished',
-                    stats['finished'] ?? 0,
-                    total,
-                    Colors.cyan,
-                  ),
-                ],
+              child: _analyticsCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionHeader('STATUS BREAKDOWN'),
+                    const SizedBox(height: 12),
+                    _buildBarRow(
+                      'Reported',
+                      stats['reported'] ?? 0,
+                      total,
+                      Colors.white54,
+                    ),
+                    _buildBarRow(
+                      'Analyzed',
+                      stats['analyzed'] ?? 0,
+                      total,
+                      Colors.blueAccent,
+                    ),
+                    _buildBarRow(
+                      'In Progress',
+                      stats['inProgress'] ?? 0,
+                      total,
+                      Colors.orange,
+                    ),
+                    _buildBarRow(
+                      'Finished',
+                      stats['finished'] ?? 0,
+                      total,
+                      Colors.cyan,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -590,63 +685,67 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
         const Divider(color: Colors.white10),
         const SizedBox(height: 14),
 
-        // Two-column: Size + Funnel
+        // Two-column: Size + Funnel in cards
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _SectionHeader('SIZE DISTRIBUTION'),
-                  const SizedBox(height: 12),
-                  _buildBarRow(
-                    'Large',
-                    stats['large'] ?? 0,
-                    total,
-                    Colors.redAccent,
-                  ),
-                  _buildBarRow(
-                    'Medium',
-                    stats['medium'] ?? 0,
-                    total,
-                    Colors.amberAccent,
-                  ),
-                  _buildBarRow(
-                    'Small',
-                    stats['small'] ?? 0,
-                    total,
-                    Colors.greenAccent,
-                  ),
-                ],
+              child: _analyticsCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionHeader('SIZE DISTRIBUTION'),
+                    const SizedBox(height: 12),
+                    _buildBarRow(
+                      'Large',
+                      stats['large'] ?? 0,
+                      total,
+                      Colors.redAccent,
+                    ),
+                    _buildBarRow(
+                      'Medium',
+                      stats['medium'] ?? 0,
+                      total,
+                      Colors.amberAccent,
+                    ),
+                    _buildBarRow(
+                      'Small',
+                      stats['small'] ?? 0,
+                      total,
+                      Colors.greenAccent,
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _SectionHeader('STATUS FUNNEL'),
-                  const SizedBox(height: 12),
-                  _buildFunnelRow(
-                    'Reported \u2192 Analyzed',
-                    stats['reported'] ?? 0,
-                    stats['analyzed'] ?? 0,
-                    Colors.blueAccent,
-                  ),
-                  _buildFunnelRow(
-                    'Analyzed \u2192 In Progress',
-                    stats['analyzed'] ?? 0,
-                    stats['inProgress'] ?? 0,
-                    Colors.orange,
-                  ),
-                  _buildFunnelRow(
-                    'In Progress \u2192 Finished',
-                    stats['inProgress'] ?? 0,
-                    stats['finished'] ?? 0,
-                    Colors.cyan,
-                  ),
-                ],
+              child: _analyticsCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionHeader('STATUS FUNNEL'),
+                    const SizedBox(height: 12),
+                    _buildFunnelRow(
+                      'Reported \u2192 Analyzed',
+                      stats['reported'] ?? 0,
+                      stats['analyzed'] ?? 0,
+                      Colors.blueAccent,
+                    ),
+                    _buildFunnelRow(
+                      'Analyzed \u2192 In Progress',
+                      stats['analyzed'] ?? 0,
+                      stats['inProgress'] ?? 0,
+                      Colors.orange,
+                    ),
+                    _buildFunnelRow(
+                      'In Progress \u2192 Finished',
+                      stats['inProgress'] ?? 0,
+                      stats['finished'] ?? 0,
+                      Colors.cyan,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -655,44 +754,16 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
         const Divider(color: Colors.white10),
         const SizedBox(height: 14),
 
-        // Jurisdiction breakdown — two columns
-        const _SectionHeader('JURISDICTION BREAKDOWN'),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                children: jMap.entries
-                    .take((jMap.length / 2).ceil())
-                    .map(
-                      (e) => _buildBarRow(
-                        e.key,
-                        e.value,
-                        total,
-                        Colors.tealAccent,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: Column(
-                children: jMap.entries
-                    .skip((jMap.length / 2).ceil())
-                    .map(
-                      (e) => _buildBarRow(
-                        e.key,
-                        e.value,
-                        total,
-                        Colors.tealAccent,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-          ],
+        // Jurisdiction breakdown — vertical bar chart
+        _analyticsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _SectionHeader('JURISDICTION BREAKDOWN'),
+              const SizedBox(height: 14),
+              SizedBox(height: 180, child: _buildVerticalBarChart(jMap, total)),
+            ],
+          ),
         ),
         const SizedBox(height: 20),
         const Divider(color: Colors.white10),
@@ -902,9 +973,165 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
     );
   }
 
+  // Analytics card wrapper
+  Widget _analyticsCard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: child,
+    );
+  }
+
+  // Donut legend row
+  Widget _donutLegendRow(Color color, String label, int count, int total) {
+    final pct = total > 0 ? (count / total * 100).toStringAsFixed(0) : '0';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ),
+          Text(
+            '$count ($pct%)',
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Vertical bar chart for jurisdictions
+  Widget _buildVerticalBarChart(Map<String, int> data, int total) {
+    if (data.isEmpty) {
+      return const Center(
+        child: Text('No data', style: TextStyle(color: Colors.white38)),
+      );
+    }
+    final maxVal = data.values.fold(0, (a, b) => a > b ? a : b);
+    final entries = data.entries.take(8).toList(); // Limit to 8 bars
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final barWidth = ((constraints.maxWidth - 16) / entries.length).clamp(
+          20.0,
+          60.0,
+        );
+        final spacing = entries.length > 1
+            ? ((constraints.maxWidth - barWidth * entries.length) /
+                      (entries.length - 1))
+                  .clamp(4.0, 16.0)
+            : 0.0;
+
+        return Column(
+          children: [
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: entries.asMap().entries.map((mapEntry) {
+                  final i = mapEntry.key;
+                  final e = mapEntry.value;
+                  final fraction = maxVal > 0 ? e.value / maxVal : 0.0;
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: i < entries.length - 1 ? spacing : 0,
+                    ),
+                    child: SizedBox(
+                      width: barWidth,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${e.value}',
+                            style: const TextStyle(
+                              color: Colors.tealAccent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeOut,
+                            height: (fraction * 100).clamp(4.0, 100.0),
+                            width: barWidth * 0.7,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.tealAccent.withValues(alpha: 0.8),
+                                  Colors.tealAccent.withValues(alpha: 0.3),
+                                ],
+                              ),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 6),
+            // X-axis labels
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: entries.asMap().entries.map((mapEntry) {
+                final i = mapEntry.key;
+                final e = mapEntry.value;
+                final shortLabel = e.key.length > 8
+                    ? '${e.key.substring(0, 7)}\u2026'
+                    : e.key;
+                return Padding(
+                  padding: EdgeInsets.only(
+                    right: i < entries.length - 1 ? spacing : 0,
+                  ),
+                  child: SizedBox(
+                    width: barWidth,
+                    child: Text(
+                      shortLabel,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 8),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _recentActivityRow(PotholeReport r) {
-    final pc = priorityColor(r.priorityColor);
-    final sc = statusColor(r.status);
+    final pc = AppColors.priorityColor(r.priorityColor);
+    final sc = AppColors.statusColor(r.status);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -915,6 +1142,19 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
       ),
       child: Row(
         children: [
+          // Priority color dot instead of text
+          Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              color: pc,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: pc.withValues(alpha: 0.5), blurRadius: 4),
+              ],
+            ),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -930,7 +1170,7 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${r.priorityColor} priority  \u2022  ${timeAgo(r.timestamp)}',
+                  timeAgo(r.timestamp),
                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
               ],
@@ -942,6 +1182,7 @@ class _ContractorSidebarState extends State<ContractorSidebar> {
             decoration: BoxDecoration(
               color: sc.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: sc.withValues(alpha: 0.3)),
             ),
             child: Text(
               r.status,
@@ -974,5 +1215,70 @@ class _SectionHeader extends StatelessWidget {
         letterSpacing: 1.4,
       ),
     );
+  }
+}
+
+// ─── Donut Chart painter ────────────────────────────────────────────────────
+
+class _DonutSegment {
+  final double value;
+  final Color color;
+  const _DonutSegment({required this.value, required this.color});
+}
+
+class _DonutChartPainter extends CustomPainter {
+  final List<_DonutSegment> segments;
+  final double total;
+
+  _DonutChartPainter({required this.segments, required this.total});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2;
+    const strokeWidth = 16.0;
+    const gapAngle = 0.04; // Small gap between segments
+
+    if (total <= 0) {
+      // Empty state: draw a grey ring
+      canvas.drawCircle(
+        center,
+        radius - strokeWidth / 2,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..color = Colors.white10,
+      );
+      return;
+    }
+
+    double startAngle = -math.pi / 2; // Start from top
+
+    for (final seg in segments) {
+      if (seg.value <= 0) continue;
+      final sweepAngle = (seg.value / total) * 2 * math.pi - gapAngle;
+      if (sweepAngle <= 0) continue;
+
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..color = seg.color;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+        startAngle,
+        sweepAngle,
+        false,
+        paint,
+      );
+
+      startAngle += sweepAngle + gapAngle;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DonutChartPainter oldDelegate) {
+    return oldDelegate.total != total || oldDelegate.segments != segments;
   }
 }

@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/report_provider.dart';
+import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/app_toast.dart';
 
 class ReportPotholeDialog extends StatefulWidget {
   final double initialLat;
@@ -55,18 +57,16 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
+        ).showSnackBar(AppToast.error('Failed to pick image: $e'));
       }
     }
   }
 
   Future<void> _submit() async {
     if (_base64Image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please provide an image of the pothole.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(AppToast.info('Please provide an image of the pothole.'));
       return;
     }
 
@@ -74,7 +74,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
 
     final provider = Provider.of<ReportProvider>(context, listen: false);
 
-    await provider.submitReport(
+    final newReport = await provider.submitReport(
       _selectedLat,
       _selectedLong,
       'data:image/jpeg;base64,$_base64Image',
@@ -83,25 +83,17 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
     if (mounted) {
       Navigator.of(context).pop();
 
-      final newReport = provider.reports.last;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Report submitted! AI Analysis: ${newReport.sizeCategory}, Priority: ${newReport.priorityColor}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+      if (newReport != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          AppToast.success(
+            'Report submitted successfully! Thank you for helping improve our roads.',
           ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 4),
-        ),
-      );
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          AppToast.error('Failed to submit report. Please try again.'),
+        );
+      }
     }
   }
 
@@ -115,9 +107,9 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
         child: Container(
           constraints: const BoxConstraints(maxWidth: 500),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E).withValues(alpha: 0.9),
+            color: AppColors.surface.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: AppColors.borderFaint),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.5),
@@ -140,17 +132,17 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
+                      icon: const Icon(Icons.close, color: AppColors.textMuted),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Colors.white24),
+              const Divider(height: 1, color: AppColors.border),
 
               // Scrollable content
               Flexible(
@@ -166,9 +158,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
+                            border: Border.all(color: AppColors.borderFaint),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -181,7 +171,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                               Container(
                                 width: 1,
                                 height: 100,
-                                color: Colors.white24,
+                                color: AppColors.border,
                               ),
                               _buildImageButton(
                                 icon: Icons.photo_library,
@@ -230,7 +220,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                         'Pinpoint exact location (Drag to adjust)',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white70,
+                          color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -239,9 +229,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                         height: 250,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
-                          ),
+                          border: Border.all(color: AppColors.borderSubtle),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
@@ -252,6 +240,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                                   target: LatLng(_selectedLat, _selectedLong),
                                   zoom: 16,
                                 ),
+                                style: kDarkMapStyle,
                                 onCameraMove: (position) {
                                   _selectedLat = position.target.latitude;
                                   _selectedLong = position.target.longitude;
@@ -288,7 +277,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.tealAccent,
+                      backgroundColor: AppColors.accent,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -304,7 +293,7 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
                             ),
                           )
                         : const Text(
-                            'Submit to AI',
+                            'Submit Report',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -334,12 +323,12 @@ class _ReportPotholeDialogState extends State<ReportPotholeDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: Colors.tealAccent),
+            Icon(icon, size: 48, color: AppColors.accent),
             const SizedBox(height: 8),
             Text(
               label,
               style: const TextStyle(
-                color: Colors.white70,
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),

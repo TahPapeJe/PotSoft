@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/providers/report_provider.dart';
-import '../../../core/models/pothole_report.dart';
+import '../../../core/services/marker_service.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../widgets/report_pothole_dialog.dart';
 
 class CitizenScreen extends StatefulWidget {
@@ -17,39 +18,19 @@ class CitizenScreen extends StatefulWidget {
 class _CitizenScreenState extends State<CitizenScreen> {
   // ─── Map ──────────────────────────────────────────────────────────────────
   GoogleMapController? _mapController;
-  final Map<String, BitmapDescriptor> _markerIcons = {};
+  final MarkerService _markers = MarkerService();
+  double _currentZoom = kDefaultZoom;
 
-  double _lat = 4.2;
-  double _long = 109.5;
-
-  static const String _mapStyle = '''
-  [
-    {"elementType":"geometry","stylers":[{"color":"#212121"}]},
-    {"elementType":"labels.icon","stylers":[{"visibility":"off"}]},
-    {"elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},
-    {"elementType":"labels.text.stroke","stylers":[{"color":"#212121"}]},
-    {"featureType":"administrative","elementType":"geometry","stylers":[{"color":"#757575"}]},
-    {"featureType":"administrative.country","elementType":"labels.text.fill","stylers":[{"color":"#9e9e9e"}]},
-    {"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#bdbdbd"}]},
-    {"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},
-    {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#181818"}]},
-    {"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},
-    {"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#2c2c2c"}]},
-    {"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#8a8a8a"}]},
-    {"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#373737"}]},
-    {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#3c3c3c"}]},
-    {"featureType":"road.local","elementType":"labels.text.fill","stylers":[{"color":"#616161"}]},
-    {"featureType":"transit","elementType":"labels.text.fill","stylers":[{"color":"#757575"}]},
-    {"featureType":"water","elementType":"geometry","stylers":[{"color":"#000000"}]},
-    {"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#3d3d3d"}]}
-  ]
-  ''';
+  double _lat = kMalaysiaCenter.lat;
+  double _long = kMalaysiaCenter.lng;
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
-    _buildMarkerIcons();
+    _markers.init().then((_) {
+      if (mounted) setState(() {});
+    });
     _fetchLocation();
   }
 
@@ -85,58 +66,6 @@ class _CitizenScreenState extends State<CitizenScreen> {
     } catch (_) {}
   }
 
-  // ─── Markers ──────────────────────────────────────────────────────────────
-  Future<void> _buildMarkerIcons() async {
-    final entries = {
-      'Red': Colors.redAccent,
-      'Yellow': Colors.amberAccent,
-      'Green': Colors.greenAccent,
-      'InProgress': Colors.orange,
-      'Finished': Colors.cyan,
-    };
-    for (final e in entries.entries) {
-      _markerIcons[e.key] = await _makeMarkerIcon(e.value);
-    }
-    if (mounted) setState(() {});
-  }
-
-  Future<BitmapDescriptor> _makeMarkerIcon(Color color) async {
-    const double size = 56;
-    const double r = size * 0.38;
-    const Offset center = Offset(size / 2, size * 0.42);
-
-    final recorder = PictureRecorder();
-    final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, size, size));
-
-    canvas.drawCircle(
-      center.translate(1.5, 1.5),
-      r,
-      Paint()..color = Colors.black.withValues(alpha: 0.35),
-    );
-    canvas.drawCircle(center, r, Paint()..color = Colors.white);
-    canvas.drawCircle(center, r - 3, Paint()..color = color);
-    canvas.drawCircle(
-      center,
-      5,
-      Paint()..color = Colors.white.withValues(alpha: 0.8),
-    );
-
-    final picture = recorder.endRecording();
-    final img = await picture.toImage(size.toInt(), size.toInt());
-    final byteData = await img.toByteData(format: ImageByteFormat.png);
-    return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
-  }
-
-  BitmapDescriptor _getMarkerIcon(PotholeReport report) {
-    if (report.status == 'Finished') {
-      return _markerIcons['Finished'] ?? BitmapDescriptor.defaultMarker;
-    }
-    if (report.status == 'In Progress') {
-      return _markerIcons['InProgress'] ?? BitmapDescriptor.defaultMarker;
-    }
-    return _markerIcons[report.priorityColor] ?? BitmapDescriptor.defaultMarker;
-  }
-
   // ─── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -145,7 +74,17 @@ class _CitizenScreenState extends State<CitizenScreen> {
         children: [
           Positioned.fill(child: _buildMap()),
           Positioned(top: 0, left: 0, right: 0, child: _buildAppBar()),
-          Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomPanel()),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 76,
+            right: 24,
+            child: _buildStatusPanel(),
+          ),
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 28,
+            left: 0,
+            right: 0,
+            child: Center(child: _buildReportFab()),
+          ),
         ],
       ),
     );
@@ -155,31 +94,37 @@ class _CitizenScreenState extends State<CitizenScreen> {
   Widget _buildMap() {
     return Consumer<ReportProvider>(
       builder: (context, provider, _) {
-        final markers = provider.reports.map((report) {
-          return Marker(
-            markerId: MarkerId(report.id),
-            position: LatLng(report.userLat, report.userLong),
-            icon: _getMarkerIcon(report),
-            infoWindow: InfoWindow(
-              title: '${report.sizeCategory} Pothole',
-              snippet: 'Status: ${report.status}  •  ${report.jurisdiction}',
-            ),
-          );
-        }).toSet();
+        final markers = _markers.buildClusteredMarkers(
+          reports: provider.reports,
+          currentZoom: _currentZoom,
+          onSingleTap: (report) {
+            // Citizen uses native info window — no custom tooltip
+          },
+          onClusterTap: (lat, lng, targetZoom) {
+            _mapController?.animateCamera(
+              CameraUpdate.newCameraPosition(
+                CameraPosition(target: LatLng(lat, lng), zoom: targetZoom),
+              ),
+            );
+          },
+        );
 
         return GoogleMap(
           initialCameraPosition: CameraPosition(
             target: LatLng(_lat, _long),
-            zoom: 5,
+            zoom: kDefaultZoom,
           ),
-          onMapCreated: (controller) {
-            _mapController = controller;
-          },
-          style: _mapStyle,
+          onMapCreated: (controller) => _mapController = controller,
+          style: kDarkMapStyle,
           markers: markers,
           myLocationEnabled: true,
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
+          onCameraMove: (pos) {
+            final zoomChanged = (_currentZoom - pos.zoom).abs() > 0.5;
+            _currentZoom = pos.zoom;
+            if (zoomChanged) setState(() {});
+          },
         );
       },
     );
@@ -204,15 +149,15 @@ class _CitizenScreenState extends State<CitizenScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.tealAccent.withValues(alpha: 0.15),
+                  color: AppColors.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: Colors.tealAccent.withValues(alpha: 0.4),
+                    color: AppColors.accent.withValues(alpha: 0.4),
                   ),
                 ),
                 child: const Icon(
                   Icons.location_on_rounded,
-                  color: Colors.tealAccent,
+                  color: AppColors.accent,
                   size: 20,
                 ),
               ),
@@ -227,7 +172,7 @@ class _CitizenScreenState extends State<CitizenScreen> {
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       height: 1.1,
                     ),
                   ),
@@ -235,7 +180,7 @@ class _CitizenScreenState extends State<CitizenScreen> {
                     'Citizen Portal',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.tealAccent,
+                      color: AppColors.accent,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.4,
                     ),
@@ -243,43 +188,6 @@ class _CitizenScreenState extends State<CitizenScreen> {
                 ],
               ),
               const Spacer(),
-              Consumer<ReportProvider>(
-                builder: (context, provider, _) {
-                  final total = provider.reports.length;
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.map_outlined,
-                          size: 14,
-                          color: Colors.white60,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '$total on map',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
             ],
           ),
         ),
@@ -287,135 +195,139 @@ class _CitizenScreenState extends State<CitizenScreen> {
     );
   }
 
-  // ─── Bottom panel ─────────────────────────────────────────────────────────
-  Widget _buildBottomPanel() {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.55),
-            border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-          ),
-          padding: EdgeInsets.only(
-            top: 16,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(context).padding.bottom + 20,
-          ),
+  // ─── Status panel (anchored top-right) ────────────────────────────────────
+  Widget _buildStatusPanel() {
+    return Consumer<ReportProvider>(
+      builder: (context, provider, _) {
+        final reports = provider.reports;
+        final total = reports.length;
+        final pending = reports
+            .where((r) => r.status != 'In Progress' && r.status != 'Finished')
+            .length;
+        final inProgress = reports
+            .where((r) => r.status == 'In Progress')
+            .length;
+        final finished = reports.where((r) => r.status == 'Finished').length;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: AppDecorations.darkPanel(),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Consumer<ReportProvider>(
-                builder: (context, provider, _) {
-                  final reports = provider.reports;
-                  final pending = reports
-                      .where(
-                        (r) =>
-                            r.status != 'In Progress' && r.status != 'Finished',
-                      )
-                      .length;
-                  final inProgress = reports
-                      .where((r) => r.status == 'In Progress')
-                      .length;
-                  final finished = reports
-                      .where((r) => r.status == 'Finished')
-                      .length;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        _legendChip('Pending', '$pending', Colors.redAccent),
-                        _legendChip(
-                          'In Progress',
-                          '$inProgress',
-                          Colors.orange,
-                        ),
-                        _legendChip('Finished', '$finished', Colors.cyan),
-                      ],
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.map_outlined,
+                    size: 14,
+                    color: AppColors.accent.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$total reports on map',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => ReportPotholeDialog(
-                        initialLat: _lat,
-                        initialLong: _long,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.warning_amber_rounded, size: 22),
-                  label: const Text(
-                    'REPORT A POTHOLE',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.tealAccent,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Divider(height: 1, color: AppColors.borderSubtle),
+              ),
+              const Text(
+                'STATUS',
+                style: TextStyle(
+                  color: AppColors.textDim,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _legendRow(AppColors.statusPending, 'Pending', pending),
+              _legendRow(AppColors.statusInProgress, 'In Progress', inProgress),
+              _legendRow(AppColors.statusFinished, 'Finished', finished),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _legendRow(Color color, String label, int count) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Pill FAB (bottom-center) ─────────────────────────────────────────────
+  Widget _buildReportFab() {
+    return Material(
+      color: AppColors.accent,
+      borderRadius: BorderRadius.circular(28),
+      elevation: 8,
+      shadowColor: AppColors.accent.withValues(alpha: 0.4),
+      child: InkWell(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) =>
+                ReportPotholeDialog(initialLat: _lat, initialLong: _long),
+          );
+        },
+        borderRadius: BorderRadius.circular(28),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.warning_amber_rounded, size: 22, color: Colors.black),
+              SizedBox(width: 10),
+              Text(
+                'Report a Pothole',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: Colors.black,
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _legendChip(String label, String count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            count,
-            style: TextStyle(
-              color: color.withValues(alpha: 0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
