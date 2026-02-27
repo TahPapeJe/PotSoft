@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'providers/analysis_provider.dart';
-import 'screens/home_screen.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+import 'core/providers/report_provider.dart';
+import 'core/theme/app_theme.dart';
+import 'routing/app_router.dart';
+
+void main() {
+  runApp(const PotSoftApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class PotSoftApp extends StatelessWidget {
+  const PotSoftApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AnalysisProvider(),
-      child: MaterialApp(
-        title: 'AI Image Analyzer',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        home: const HomeScreen(),
-        debugShowCheckedModeBanner: false,
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => ReportProvider())],
+      child: MaterialApp.router(
+        title: 'PotSoft',
+        theme: appTheme,
+        routerConfig: appRouter,
       ),
     );
   }
