@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/pothole_report.dart';
 import '../../../core/providers/report_provider.dart';
+import '../../../core/services/insights_pdf_service.dart';
 import '../../../core/theme/design_tokens.dart';
 import 'contractor_helpers.dart';
 
@@ -1076,6 +1077,49 @@ class _AiInsightsPanelState extends State<_AiInsightsPanel>
                         ),
                       ),
                     ),
+
+                  // PDF Download button
+                  if (!loading && hasData)
+                    IconButton(
+                      tooltip: 'Download PDF Report',
+                      onPressed: () async {
+                        final p = context.read<ReportProvider>();
+                        try {
+                          await InsightsPdfService.downloadReport(
+                            summary: p.insightSummary,
+                            trends: p.insightTrends,
+                            recommendations: p.insightRecommendations,
+                            jurisdictions: p.insightJurisdictions,
+                          );
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('PDF error: $e'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          }
+                          debugPrint('PDF download error: $e');
+                        }
+                      },
+                      icon: const Icon(Icons.picture_as_pdf, size: 18),
+                      style: IconButton.styleFrom(
+                        foregroundColor: Colors.tealAccent,
+                        backgroundColor: Colors.tealAccent.withValues(
+                          alpha: 0.12,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: Colors.tealAccent.withValues(alpha: 0.25),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  if (!loading && hasData) const SizedBox(width: 6),
 
                   // Generate / Refresh button
                   if (!loading)

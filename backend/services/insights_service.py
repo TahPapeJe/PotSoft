@@ -141,7 +141,7 @@ def _age_hours(report: dict, now: datetime) -> float:
 
 def _call_gemini(prompt: str, max_retries: int = 3) -> str:
     """Send a text prompt to Gemini with retry on rate-limit errors."""
-    model = genai.GenerativeModel("gemini-2.5-flash-lite")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     for attempt in range(max_retries):
         try:
             response = model.generate_content(prompt)

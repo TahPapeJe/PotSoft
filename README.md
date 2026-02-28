@@ -2,7 +2,7 @@
 
 ![](./.github/banner.png)
 
-**Team TahPapeJe**
+**Team CYBERTROOPER**
 
 PotSoft is an AI-powered pothole detection and reporting platform for Malaysia. Citizens photograph road damage, the system analyses it with Google Gemini Vision, and contractors triage repairs from a real-time dashboard.
 
@@ -86,4 +86,4 @@ The app opens in Chrome. The citizen portal is at `/`, the contractor dashboard 
 
 ## License
 
-Built for KitaHack 2026. All rights reserved by Team TahPapeJe.
+Built for KitaHack 2026. All rights reserved by Team CYBERTROOPER.
