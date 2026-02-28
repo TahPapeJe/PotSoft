@@ -1,11 +1,15 @@
 from pydantic import BaseModel
-from typing import Optional
 
 
 class AnalysisResponse(BaseModel):
     success: bool
     analysis: str | None = None
     error: str | None = None
+
+
+class StatusHistoryEntry(BaseModel):
+    status: str
+    at: str
 
 
 class PotholeReportModel(BaseModel):
@@ -20,6 +24,7 @@ class PotholeReportModel(BaseModel):
     jurisdiction: str
     estimated_duration: str
     status: str
+    status_history: list[StatusHistoryEntry] = []
 
 
 class StatusUpdateRequest(BaseModel):

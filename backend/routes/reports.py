@@ -61,18 +61,22 @@ async def create_report(
     jurisdiction = resolve_jurisdiction(lat, long)
     analysis["jurisdiction"] = jurisdiction
 
+    now_iso = datetime.now(timezone.utc).isoformat()
     report = {
         "id": next_id(),
         "user_lat": lat,
         "user_long": long,
         "image_file": image_data_uri,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": now_iso,
         "is_pothole": analysis["is_pothole"],
         "size_category": analysis["size_category"],
         "priority_color": analysis["priority_color"],
         "jurisdiction": analysis["jurisdiction"],
         "estimated_duration": analysis["estimated_duration"],
         "status": "Analyzed",
+        "status_history": [
+            {"status": "Analyzed", "at": now_iso},
+        ],
     }
 
     reports.append(report)
@@ -93,6 +97,15 @@ async def update_report_status(report_id: str, body: StatusUpdateRequest):
     for report in reports:
         if report["id"] == report_id:
             report["status"] = body.status
+            # Append to status history for analytics tracking
+            if "status_history" not in report:
+                report["status_history"] = []
+            report["status_history"].append(
+                {
+                    "status": body.status,
+                    "at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
             return report
 
     raise HTTPException(status_code=404, detail=f"Report {report_id} not found.")

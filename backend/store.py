@@ -749,3 +749,25 @@ reports: list[dict] = [
         "status": "Analyzed",
     },
 ]
+
+# ── Auto-generate status_history for seed data ──────────────────────────────
+# Creates a realistic history chain based on each report's current status.
+_STATUS_CHAIN = {
+    "Reported": ["Reported"],
+    "Analyzed": ["Reported", "Analyzed"],
+    "In Progress": ["Reported", "Analyzed", "In Progress"],
+    "Finished": ["Reported", "Analyzed", "In Progress", "Finished"],
+}
+
+for _r in reports:
+    _ts = datetime.fromisoformat(_r["timestamp"])
+    _chain = _STATUS_CHAIN.get(_r["status"], ["Reported"])
+    _history = []
+    for _i, _s in enumerate(_chain):
+        _history.append(
+            {
+                "status": _s,
+                "at": (_ts + timedelta(hours=_i * 6)).isoformat(),
+            }
+        )
+    _r["status_history"] = _history

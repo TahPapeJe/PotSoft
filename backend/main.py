@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import analyze
 from routes import reports
+from routes import insights
 
 app = FastAPI(
     title="PotSoft API",
@@ -21,6 +22,7 @@ app.add_middleware(
 # Include routers
 app.include_router(analyze.router)
 app.include_router(reports.router)
+app.include_router(insights.router)
 
 
 @app.get("/")
