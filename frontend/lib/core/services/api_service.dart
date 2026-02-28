@@ -87,6 +87,52 @@ class ApiService {
       );
     }
   }
+
+  // ── AI Insights endpoints ───────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> fetchInsightSummary() async {
+    final uri = Uri.parse('$baseUrl/api/insights/summary');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw ApiException('Failed to load summary (${response.statusCode})');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchInsightTrends() async {
+    final uri = Uri.parse('$baseUrl/api/insights/trends');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw ApiException('Failed to load trends (${response.statusCode})');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchInsightRecommendations() async {
+    final uri = Uri.parse('$baseUrl/api/insights/recommendations');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw ApiException(
+        'Failed to load recommendations (${response.statusCode})',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchInsightJurisdictions() async {
+    final uri = Uri.parse('$baseUrl/api/insights/jurisdictions');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw ApiException(
+        'Failed to load jurisdiction scores (${response.statusCode})',
+      );
+    }
+  }
 }
 
 /// Simple exception class for API errors.
