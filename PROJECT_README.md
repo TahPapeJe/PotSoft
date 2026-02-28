@@ -1,9 +1,5 @@
 # PotSoft — AI-Powered Pothole Detection & Reporting Platform for Malaysia
 
-**Team TahPapeJe | KitaHack 2026**
-
----
-
 # Part 1: Project Description
 
 ## Brief Summary
@@ -37,7 +33,7 @@ Malaysia's road maintenance system is broken at every stage of the reporting-to-
 
 ### SDG 11 — Sustainable Cities and Communities
 
-PotSoft directly addresses SDG Target 11.2 (safe, affordable, accessible transport systems) and Target 11.7 (universal access to safe, inclusive public spaces). Potholes are not just an inconvenience — they are a safety hazard that disproportionately affects vulnerable road users. Motorcyclists, who make up 48% of Malaysian road users, are the most at risk because a pothole that a car absorbs can throw a motorcycle rider off their vehicle. By enabling instant AI-powered reporting and priority-based repair scheduling, PotSoft directly reduces the time citizens are exposed to dangerous road conditions.
+PotSoft directly addresses SDG Target 1 (safe, affordable, accessible transport systems) and Target 11.7 (universal access to safe, inclusive public spaces). Potholes are not just an inconvenience — they are a safety hazard that disproportionately affects vulnerable road users. Motorcyclists, who make up 48% of Malaysian road users, are the most at risk because a pothole that a car absorbs can throw a motorcycle rider off their vehicle. By enabling instant AI-powered reporting and priority-based repair scheduling, PotSoft directly reduces the time citizens are exposed to dangerous road conditions.
 
 ### SDG 9 — Industry, Innovation, and Infrastructure
 
@@ -213,7 +209,7 @@ User testing revealed that the citizen portal felt like "a phone app stretched t
 
 ## Future Roadmap
 
-### Phase 1: Production Foundation (Months 1–6)
+### Phase 1: Production Foundation (Months 1–12)
 
 - Migrate to Firebase Firestore for persistent data storage and real-time synchronization.
 - Add Firebase Authentication for contractor accounts while keeping citizen reporting anonymous.
@@ -221,20 +217,15 @@ User testing revealed that the citizen portal felt like "a phone app stretched t
 - Deploy Flutter mobile app to Android and iOS from the existing codebase.
 - Pilot with 2–3 local councils in Perak and Kuala Lumpur, targeting 500+ reports in 6 months.
 
-### Phase 2: National Scale with Government Integration (Months 6–18)
+### Phase 2: National Scale with Government Integration (Months 13–36)
 
 - Integrate with SISPAA government portal as an AI triage layer for road complaints.
 - Build multi-channel intake connectors for Facebook, WhatsApp, phone, and existing council platforms.
 - Add AI-powered duplicate detection using GPS proximity and image similarity.
 - Partner with highway concessionaires (PLUS, ANIH, Gamuda) for toll road maintenance.
 - Introduce predictive maintenance using historical data and weather patterns to anticipate pothole formation before it occurs.
-
-### Phase 3: Regional Expansion (Months 18–36)
-
-- Expand jurisdiction resolver to Indonesia (514 regencies), Philippines (33,000+ barangays), Thailand, and Vietnam.
-- Leverage Gemini's language-agnostic image analysis — the AI pipeline works regardless of country.
-- Evolve beyond potholes to general municipal infrastructure defects — street lights, drain covers, road signs.
-- Build climate resilience dataset for partnerships with the Asian Development Bank, World Bank, and UN-Habitat.
+- Infrastructure Diversification: Evolves from a niche pothole solution into a general-purpose municipal platform (addressing streetlights, drainage, signage, etc.).
+- National Standardization: Aims to become the official AI backbone for all 149 local authorities across Malaysia, creating a unified standard for infrastructure management.
 
 ### Technical Scaling Path
 
