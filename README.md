@@ -234,9 +234,7 @@ The app opens in Chrome. The citizen portal is at `/`, the contractor dashboard 
 **SDG 9 - Industry, Innovation, and Infrastructure.** PotSoft applies AI to infrastructure maintenance, introducing automated severity classification, GPS-based jurisdiction routing, and AI-generated priority recommendations that optimize repair crew deployment for maximum safety impact.
 
 ---
-
-## Future Roadmap
-
+##Future Roadmap
 **Phase 1 - Production Foundation (Months 1-12)**
 
 - Migrate to Firebase Firestore for persistent storage and real-time sync
