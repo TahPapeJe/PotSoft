@@ -27,7 +27,7 @@ PotSoft is an AI-powered civic infrastructure platform that transforms how Malay
 
 ## Problem
 
-Malaysia's road maintenance system is broken at every stage of the reporting-to-repair pipeline.
+Malaysia's road maintenance system is broken at every stage of the reporting-to-repair pipeline. There are two main problems which are barrier for citizen and operational failure by authorities
 
 **Citizens face three barriers:**
 
